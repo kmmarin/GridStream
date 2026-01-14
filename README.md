@@ -28,3 +28,5 @@ Built for efficiency, GridStream allows you to transcode, relay, and monitor mul
    ```bash
    git clone [https://github.com/kmmarin/GridStream.git](https://github.com/kmmarin/GridStream.git)
    cd GridStream
+   docker compose up -d --build
+   docker compose up -d
