@@ -10,5 +10,31 @@
             "name": "PitPractice",
             "url": "http://172.16.0.137:8888/PitPractice/index.m3u8"
         }
+    ],
+    "4": [
+        {
+            "id": "1",
+            "name": "outside",
+            "source": "rtsp://root:Secure500@172.20.10.157/axis-media/media.amp",
+            "url": "http://172.16.0.137:8888/outside/index.m3u8"
+        },
+        {
+            "id": "2",
+            "name": "PitPractice",
+            "source": "rtsp://root:Pri.212322@172.16.7.18/axis-media/media.amp?streamprofile=PitPractice",
+            "url": "http://172.16.0.137:8888/PitPractice/index.m3u8"
+        },
+        {
+            "id": "3",
+            "name": "outside1",
+            "source": "rtsp://root:Secure500@172.20.10.157/axis-media/media.amp",
+            "url": "http://172.16.0.137:8888/outside1/index.m3u8"
+        },
+        {
+            "id": "4",
+            "name": "outside4",
+            "source": "rtsp://root:Secure500@172.20.10.169/axis-media/media.amp",
+            "url": "http://172.16.0.137:8888/outside4/index.m3u8"
+        }
     ]
 }

@@ -1,187 +1,155 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>GRIDSTREAM REACTIVE VIEWER</title>
+    <title>GRIDSTREAM VIEW</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         :root { --primary: #76b900; --bg: #0a0a0a; --sidebar: #111; --text: #eee; }
-        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; height: 100vh; }
         
         nav { width: 300px; background: var(--sidebar); border-right: 1px solid #333; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
         .nav-header { font-size: 22px; font-weight: bold; margin-bottom: 25px; color: white; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        .section-label { font-size: 11px; color: #555; text-transform: uppercase; margin: 25px 0 10px 0; font-weight: bold; letter-spacing: 1px; }
+        .section-label { font-size: 11px; color: #555; text-transform: uppercase; margin: 20px 0 10px 0; font-weight: bold; }
         
-        .nav-item { 
-            padding: 10px 15px; border-radius: 6px; cursor: pointer; color: #888; 
-            margin-bottom: 6px; transition: 0.2s; display: flex; justify-content: space-between; align-items: center; background: #161616;
-        }
+        .nav-item { padding: 10px 15px; border-radius: 6px; cursor: pointer; color: #888; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; background: #161616; }
         .nav-item:hover { background: #222; color: var(--primary); }
-        .nav-item.active-stream { border-right: 3px solid var(--primary); color: white; }
-        
-        main { flex: 1; padding: 20px; overflow-y: auto; background: #050505; }
-        #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 15px; }
-        
-        .tile { background: #000; border: 1px solid #222; position: relative; aspect-ratio: 16 / 9; border-radius: 4px; overflow: hidden; }
-        video { width: 100%; height: 100%; object-fit: contain; background: black; }
-        
-        .tile-label { 
-            position: absolute; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.85); 
-            padding: 10px 15px; font-size: 13px; z-index: 5; display: flex; justify-content: space-between; align-items: center;
-        }
-        .info-icon { 
-            color: var(--primary); cursor: help; font-style: normal; font-weight: bold; 
-            margin-left: 10px; background: #222; padding: 0 6px; border-radius: 50%; border: 1px solid #444;
-        }
-        .info-icon:hover::after {
-            content: "RTSP Source: " attr(data-source); position: absolute; background: #111; color: #fff;
-            padding: 10px; border-radius: 4px; top: 35px; left: 0; width: 320px; z-index: 100; border: 1px solid var(--primary); font-size: 11px;
-        }
+        .del-btn { color: #444; font-size: 16px; margin-left: 10px; }
+        .del-btn:hover { color: #ff4444; }
 
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 12px; font-size: 13px; }
+        main { flex: 1; padding: 20px; overflow-y: auto; }
+        #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 15px; }
+        
+        .tile { background: #000; border: 1px solid #222; position: relative; aspect-ratio: 16 / 9; }
+        video { width: 100%; height: 100%; object-fit: contain; }
+        
+        .tile-label { position: absolute; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); padding: 8px 12px; font-size: 12px; z-index: 5; display: flex; justify-content: space-between; }
+        .info-icon { color: var(--primary); cursor: help; margin-left: 8px; font-style: normal; }
+        .info-icon:hover::after { content: "Source: " attr(data-source); position: absolute; background: #222; color: #fff; padding: 8px; border-radius: 4px; top: 30px; left: 0; width: 280px; z-index: 100; border: 1px solid var(--primary); }
+
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 10px; font-size: 13px; text-transform: uppercase; }
         .btn-primary { background: var(--primary); color: black; }
-        .btn-save { background: #333; color: white; border: 1px solid #444; }
+        .btn-save { background: #222; color: white; border: 1px solid #444; }
     </style>
 </head>
 <body>
 
 <nav>
-    <div class="nav-header">GRID<span style="color:var(--primary)">STREAM</span></div>
-    
-    <button class="btn btn-primary" onclick="toggleAutoSync()" id="sync-btn">🔄 AUTO-SYNC: ON</button>
-    <button class="btn btn-save" onclick="saveCurrentLayout()">💾 SAVE VIEW PRESET</button>
+    <div class="nav-header">GRID<span style="color:var(--primary)">VIEW</span></div>
+    <button class="btn btn-primary" onclick="newLayout()">+ NEW LAYOUT</button>
+    <button class="btn btn-save" onclick="saveLayout()">💾 SAVE VIEW</button>
 
-    <div class="section-label">Saved Layouts</div>
+    <div class="section-label">Saved Views</div>
     <div id="layout-list"></div>
 
-    <div class="section-label">Live Stream Inventory</div>
+    <div class="section-label">Available Cameras</div>
     <div id="stream-list"></div>
 </nav>
 
-<main>
-    <div id="grid"></div>
-</main>
+<main><div id="grid"></div></main>
 
 <script>
-    let autoSync = true;
-    let hlsInstances = {}; // Track HLS objects to destroy them properly
+    let activeStreams = [];
+    let lastInventoryHash = "";
 
-    function toggleAutoSync() {
-        autoSync = !autoSync;
-        document.getElementById('sync-btn').innerText = autoSync ? "🔄 AUTO-SYNC: ON" : "🔄 AUTO-SYNC: OFF";
-        document.getElementById('sync-btn').style.opacity = autoSync ? "1" : "0.5";
-    }
+    // 1. Update Sidebar Inventory (Auto-syncs list, but not the grid)
+    async function updateSidebar() {
+        const res = await fetch('/api/available_streams');
+        const streams = await res.json();
+        const hash = JSON.stringify(streams.map(s => s.id));
+        if (hash === lastInventoryHash) return;
 
-    async function syncGrid() {
-        if (!autoSync) return;
-
-        try {
-            const res = await fetch('/api/available_streams');
-            const serverStreams = await res.json();
-            const serverUrls = serverStreams.map(s => s.url);
-            
-            const grid = document.getElementById('grid');
-            const currentTiles = Array.from(grid.querySelectorAll('.tile'));
-            const currentUrls = currentTiles.map(t => t.getAttribute('data-url'));
-
-            // 1. Remove tiles that are no longer in the server list
-            currentTiles.forEach(tile => {
-                const url = tile.getAttribute('data-url');
-                if (!serverUrls.includes(url)) {
-                    console.log("Removing dead stream:", url);
-                    if (hlsInstances[url]) {
-                        hlsInstances[url].destroy();
-                        delete hlsInstances[url];
-                    }
-                    tile.remove();
-                }
-            });
-
-            // 2. Add tiles that are new on the server
-            serverStreams.forEach(s => {
-                if (!currentUrls.includes(s.url)) {
-                    console.log("Adding new stream:", s.name);
-                    createTile(s);
-                }
-            });
-
-            // 3. Update Sidebar List
-            updateSidebar(serverStreams);
-
-        } catch (e) { console.error("Sync Error:", e); }
-    }
-
-    function createTile(streamObj) {
-        const grid = document.getElementById('grid');
-        const tile = document.createElement('div');
-        tile.className = 'tile';
-        tile.setAttribute('data-url', streamObj.url);
-        const vidId = 'vid-' + Math.random().toString(36).substr(2, 9);
-        
-        tile.innerHTML = `
-            <div class="tile-label">
-                <span><strong>${streamObj.name}</strong> <i class="info-icon" data-source="${streamObj.source}">ⓘ</i></span>
-                <span style="color:#ff4444; cursor:pointer;" onclick="manualRemove('${streamObj.url}')">✕</span>
-            </div>
-            <video id="${vidId}" autoplay muted controls></video>
-        `;
-        grid.appendChild(tile);
-        
-        const video = document.getElementById(vidId);
-        if (Hls.isSupported()) {
-            const hls = new Hls();
-            hls.loadSource(streamObj.url);
-            hls.attachMedia(video);
-            hlsInstances[streamObj.url] = hls;
-        }
-    }
-
-    function updateSidebar(streams) {
         const sList = document.getElementById('stream-list');
         sList.innerHTML = '';
         streams.forEach(s => {
             const div = document.createElement('div');
             div.className = 'nav-item';
-            div.innerHTML = `<span>📹 ${s.name}</span>`;
+            div.innerHTML = `<span>📹 ${s.name}</span> <b>+</b>`;
+            div.onclick = () => addTile(s);
             sList.appendChild(div);
         });
+        lastInventoryHash = hash;
     }
 
-    function manualRemove(url) {
-        // If user manually closes, we temporarily disable autoSync or just let it pop back? 
-        // Better to just remove the tile.
-        const tile = document.querySelector(`.tile[data-url="${url}"]`);
-        if (tile) tile.remove();
-        if (hlsInstances[url]) {
-            hlsInstances[url].destroy();
-            delete hlsInstances[url];
+    // 2. Add a Video Tile
+    function addTile(stream) {
+        if (activeStreams.some(s => s.url === stream.url)) return;
+        const grid = document.getElementById('grid');
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        const vidId = 'v-' + Math.random().toString(36).substr(2, 5);
+        tile.innerHTML = `
+            <div class="tile-label">
+                <span>${stream.name} <i class="info-icon" data-source="${stream.source}">ⓘ</i></span>
+                <span style="color:#ff4444; cursor:pointer;" onclick="this.parentElement.parentElement.remove(); activeStreams=activeStreams.filter(s=>s.url!=='${stream.url}'); saveState();">✕</span>
+            </div>
+            <video id="${vidId}" autoplay muted controls></video>
+        `;
+        grid.appendChild(tile);
+        if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(stream.url);
+            hls.attachMedia(document.getElementById(vidId));
         }
+        activeStreams.push(stream);
+        saveState();
     }
 
-    async function init() {
-        // Load Layouts once
-        const lRes = await fetch('/api/layouts');
-        const layouts = await lRes.json();
+    // 3. Layout Management
+    function newLayout() {
+        document.getElementById('grid').innerHTML = '';
+        activeStreams = [];
+        saveState();
+    }
+
+    async function saveLayout() {
+        const name = prompt("Name this layout:");
+        if (!name) return;
+        await fetch('/api/layouts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, streams: activeStreams})
+        });
+        loadLayouts();
+    }
+
+    async function loadLayouts() {
+        const res = await fetch('/api/layouts');
+        const layouts = await res.json();
         const lList = document.getElementById('layout-list');
+        lList.innerHTML = '';
         Object.keys(layouts).forEach(name => {
             const div = document.createElement('div');
             div.className = 'nav-item';
-            div.innerHTML = `<span>🖼️ ${name}</span>`;
-            div.onclick = () => { autoSync = false; loadLayout(layouts[name]); };
+            div.innerHTML = `<span onclick="applyLayout('${name}')">🖼️ ${name}</span> <b class="del-btn" onclick="deleteLayout('${name}', event)">✕</b>`;
             lList.appendChild(div);
         });
-
-        // Start Reactive Loop
-        syncGrid();
-        setInterval(syncGrid, 3000); // Check for changes every 3 seconds
+        window.applyLayout = (n) => {
+            document.getElementById('grid').innerHTML = '';
+            activeStreams = [];
+            layouts[n].forEach(addTile);
+        };
     }
 
-    function loadLayout(streams) {
-        document.getElementById('grid').innerHTML = '';
-        // Clear HLS instances
-        Object.values(hlsInstances).forEach(h => h.destroy());
-        hlsInstances = {};
-        streams.forEach(s => createTile(s));
-        document.getElementById('sync-btn').innerText = "🔄 AUTO-SYNC: OFF";
+    async function deleteLayout(name, e) {
+        e.stopPropagation();
+        if (confirm(`Delete ${name}?`)) {
+            await fetch('/api/delete_layout', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name}) });
+            loadLayouts();
+        }
+    }
+
+    // 4. State Persistence
+    function saveState() {
+        fetch('/api/state', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({streams: activeStreams}) });
+    }
+
+    async function init() {
+        loadLayouts();
+        updateSidebar();
+        setInterval(updateSidebar, 5000);
+        const res = await fetch('/api/state');
+        const state = await res.json();
+        if (state.streams) state.streams.forEach(addTile);
     }
 
     init();
