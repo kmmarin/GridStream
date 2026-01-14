@@ -1,1 +1,46 @@
-{}
+{
+    "1": {
+        "fields": {
+            "codec": "copy",
+            "destination": "rtsp://172.16.0.137:8554",
+            "input": "rtsp://root:Secure500@172.20.10.157/axis-media/media.amp",
+            "stream_name": "outside"
+        },
+        "id": 1,
+        "saved": true,
+        "should_be_running": true
+    },
+    "2": {
+        "fields": {
+            "codec": "copy",
+            "destination": "rtsp://172.16.0.137:8554",
+            "input": "rtsp://root:Pri.212322@172.16.7.18/axis-media/media.amp?streamprofile=PitPractice",
+            "stream_name": "PitPractice"
+        },
+        "id": 2,
+        "saved": true,
+        "should_be_running": true
+    },
+    "3": {
+        "fields": {
+            "codec": "copy",
+            "destination": "rtsp://172.16.0.137:8554",
+            "input": "rtsp://root:Secure500@172.20.10.157/axis-media/media.amp",
+            "stream_name": "outside1"
+        },
+        "id": 3,
+        "saved": true,
+        "should_be_running": true
+    },
+    "4": {
+        "fields": {
+            "codec": "copy",
+            "destination": "rtsp://172.16.0.137:8554",
+            "input": "rtsp://root:Secure500@172.20.10.169/axis-media/media.amp",
+            "stream_name": "outside4"
+        },
+        "id": 4,
+        "saved": true,
+        "should_be_running": true
+    }
+}

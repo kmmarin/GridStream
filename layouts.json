@@ -1,0 +1,14 @@
+{
+    "BOTH": [
+        {
+            "id": "1",
+            "name": "outside",
+            "url": "http://172.16.0.137:8888/outside/index.m3u8"
+        },
+        {
+            "id": "2",
+            "name": "PitPractice",
+            "url": "http://172.16.0.137:8888/PitPractice/index.m3u8"
+        }
+    ]
+}
