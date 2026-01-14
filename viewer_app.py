@@ -4,7 +4,6 @@ import os
 
 app = Flask(__name__)
 
-# Path to the shared config file
 CONFIG_FILE = "streams.json"
 
 @app.route("/")
@@ -22,18 +21,27 @@ def get_streams():
             
         available = []
         for sid, config in data.items():
-            # Only show streams intended to be running
+            # Only show streams that are actually set to be running
             if config.get("should_be_running"):
                 fields = config.get("fields", {})
-                available.append({
-                    "id": sid,
-                    "name": fields.get("stream_name", f"Stream {sid}"),
-                    "source": fields.get("destination", ""), # Using destination as the ID/Source
-                    "preview_url": f"/preview/gs_{sid}.m3u8"
-                })
+                stream_name = fields.get("stream_name", "")
+                destination = fields.get("destination", "")
+
+                # Logic: Convert RTSP dest to HLS URL
+                # If dest is rtsp://172.16.0.137:8554, HLS is http://172.16.0.137:8888/stream_name
+                if "://" in destination:
+                    parts = destination.split("://")[1].split(":")[0]
+                    hls_url = f"http://{parts}:8888/{stream_name}/index.m3u8"
+                    
+                    available.append({
+                        "id": sid,
+                        "name": stream_name,
+                        "url": hls_url
+                    })
         return jsonify(available)
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print(f"Viewer Error: {e}")
+        return jsonify([])
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8081)

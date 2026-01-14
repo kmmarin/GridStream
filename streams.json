@@ -1,17 +1,1 @@
-{
-    "1": {
-        "id": 1,
-        "fields": {
-            "input": "rtsp://172.16.2.75/axis-media/media.amp",
-            "codec": "copy",
-            "bitrate": "",
-            "fps": "",
-            "destination": "rtsp://172.16.0.137:8554",
-            "stream_name": "workroom"
-        },
-        "saved": true,
-        "show_preview": true,
-        "show_console": true,
-        "should_be_running": true
-    }
-}
+{}
