@@ -9,7 +9,7 @@ import time
 
 app = Flask(__name__)
 
-# GridStream Directory Config
+# GridStream Configuration
 PREVIEW_DIR = "/tmp/gridstream_preview"
 CONFIG_FILE = "streams.json"
 os.makedirs(PREVIEW_DIR, exist_ok=True)
@@ -72,7 +72,7 @@ def auto_restart_monitor():
     """GridStream Heartbeat: Ensures persistent streams stay alive"""
     while True:
         time.sleep(10)
-        for s in streams.values():
+        for s in list(streams.values()):
             if s.get("should_be_running") and (s.get("proc") is None or s["proc"].poll() is not None):
                 start_stream(s)
 
@@ -122,7 +122,7 @@ def index():
             streams[sid] = {"id": sid, "proc": None, "log": [], "saved": False, "rtsp": None, 
                             "preview": None, "cmd": None, "error": None, "show_preview": True, 
                             "show_console": True, "should_be_running": False,
-                            "fields": {"destination": "rtsp://172.16.0.137:8554", "codec": "copy", "stream_name": f"stream_{sid}", "input": "", "bitrate": "", "fps": ""}}
+                            "fields": {"destination": "rtsp://localhost:8554", "codec": "copy", "stream_name": f"stream_{sid}", "input": "", "bitrate": "", "fps": ""}}
             save_to_disk()
             return redirect(url_for("index", active_tab=sid))
         
@@ -160,15 +160,33 @@ def index():
 
 def start_stream(stream):
     stop_stream(stream)
-    cmd, rtsp, preview = build_ffmpeg_cmd(stream["fields"], stream["id"])
-    proc = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.DEVNULL, text=True)
-    stream.update({"proc": proc, "cmd": " ".join(cmd), "rtsp": rtsp, "preview": preview, "log": []})
-    threading.Thread(target=read_ffmpeg_output, args=(stream["id"], proc), daemon=True).start()
+    try:
+        cmd, rtsp, preview = build_ffmpeg_cmd(stream["fields"], stream["id"])
+        proc = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.DEVNULL, text=True)
+        stream.update({"proc": proc, "cmd": " ".join(cmd), "rtsp": rtsp, "preview": preview, "log": []})
+        threading.Thread(target=read_ffmpeg_output, args=(stream["id"], proc), daemon=True).start()
+    except Exception as e:
+        stream["error"] = str(e)
 
 def stop_stream(stream):
     if stream.get("proc"):
         stream["proc"].terminate()
         stream["proc"] = None
+
+# API ENDPOINT FOR GRIDSTREAMVIEWER
+@app.route("/api/streams")
+def api_list_streams():
+    """Returns a list of active streams for the Mosaic Viewer"""
+    active_streams = []
+    for sid, s in streams.items():
+        # Check if process is running and HLS preview exists
+        if s.get("proc") and s["proc"].poll() is None and s.get("preview"):
+            active_streams.append({
+                "id": sid,
+                "name": s["fields"]["stream_name"],
+                "preview_url": f"/preview/{s['preview']}"
+            })
+    return jsonify(active_streams)
 
 @app.route("/api/stats")
 def api_stats():
