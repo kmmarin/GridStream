@@ -43,7 +43,6 @@ Network: Ensure the destination RTSP URL is reachable by your Media Server (e.g.
 ### To install without NVIDIA
 Comment out these lines in the docker compose file
 
-```bash
 #    deploy:
 #      resources:
 #        reservations:
