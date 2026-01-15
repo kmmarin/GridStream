@@ -4,41 +4,51 @@
     <title>GRIDSTREAM VIEW</title>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-        :root { --primary: #76b900; --bg: #0a0a0a; --sidebar: #111; --text: #eee; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; display: flex; height: 100vh; }
-        
-        nav { width: 300px; background: var(--sidebar); border-right: 1px solid #333; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        :root { --primary: #76b900; --bg: #0a0a0a; --sidebar: #111; --text: #eee; --slot-w: 240px; --slot-h: 135px; --gap: 15px; }
+        body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+
+        nav { width: 320px; background: var(--sidebar); border-right: 1px solid #333; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
         .nav-header { font-size: 22px; font-weight: bold; margin-bottom: 25px; color: white; border-bottom: 1px solid #222; padding-bottom: 10px; }
         .section-label { font-size: 11px; color: #555; text-transform: uppercase; margin: 20px 0 10px 0; font-weight: bold; }
-        
-        .nav-item { padding: 10px 15px; border-radius: 6px; cursor: pointer; color: #888; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; background: #161616; }
-        .nav-item:hover { background: #222; color: var(--primary); }
-        .del-btn { color: #444; font-size: 16px; margin-left: 10px; }
-        .del-btn:hover { color: #ff4444; }
 
-        main { flex: 1; padding: 20px; overflow-y: auto; }
-        #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 15px; }
-        
-        .tile { background: #000; border: 1px solid #222; position: relative; aspect-ratio: 16 / 9; }
-        video { width: 100%; height: 100%; object-fit: contain; }
-        
-        .tile-label { position: absolute; top: 0; left: 0; right: 0; background: rgba(0,0,0,0.8); padding: 8px 12px; font-size: 12px; z-index: 5; display: flex; justify-content: space-between; }
-        .info-icon { color: var(--primary); cursor: help; margin-left: 8px; font-style: normal; }
-        .info-icon:hover::after { content: "Source: " attr(data-source); position: absolute; background: #222; color: #fff; padding: 8px; border-radius: 4px; top: 30px; left: 0; width: 280px; z-index: 100; border: 1px solid var(--primary); }
+        /* Layout Items */
+        .layout-item { background: #161616; border-radius: 6px; margin-bottom: 10px; border: 1px solid #222; overflow: hidden; }
+        .layout-item.active { border-color: var(--primary); background: #1c2214; }
+        .layout-link { padding: 12px; cursor: pointer; display: block; font-size: 14px; font-weight: bold; }
+        .layout-actions { display: none; background: #000; padding: 8px; gap: 5px; grid-template-columns: 1fr 1fr 1fr; border-top: 1px solid #222; }
+        .layout-item.active .layout-actions { display: grid; }
 
-        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 10px; font-size: 13px; text-transform: uppercase; }
-        .btn-primary { background: var(--primary); color: black; }
-        .btn-save { background: #222; color: white; border: 1px solid #444; }
+        .action-btn { padding: 5px; font-size: 10px; border: none; border-radius: 3px; cursor: pointer; text-align: center; font-weight: bold; text-transform: uppercase; }
+        .btn-save { background: var(--primary); color: black; }
+        .btn-discard { background: #444; color: white; }
+        .btn-delete { background: #511; color: #f55; }
+
+        /* Stream Sidebar */
+        .stream-item { padding: 10px; border-radius: 4px; cursor: pointer; color: #888; margin-bottom: 5px; display: flex; justify-content: space-between; background: #161616; font-size: 13px; }
+        .stream-item:hover { color: var(--primary); background: #222; }
+
+        /* Grid */
+        main { flex: 1; padding: var(--gap); overflow: auto; background-color: #050505; }
+        #grid { display: grid; grid-template-columns: repeat(auto-fill, var(--slot-w)); grid-auto-rows: var(--slot-h); gap: var(--gap); width: 100%; }
+
+        .tile { background: #000; border: 1px solid #222; display: flex; flex-direction: column; position: relative; border-radius: 4px; overflow: hidden; }
+        video { width: 100%; height: 100%; object-fit: contain; flex-grow: 1; background: #000; }
+
+        .tile-header { background: #1a1a1a; padding: 6px; font-size: 11px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; }
+        .controls { display: flex; gap: 5px; }
+        .ctrl-btn { cursor: pointer; color: #aaa; font-size: 12px; padding: 2px 5px; background: #2a2a2a; border-radius: 3px; }
+        .ctrl-btn:hover { color: var(--primary); }
+
+        .btn-main { padding: 12px; width: 100%; background: var(--primary); color: black; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
 <nav>
     <div class="nav-header">GRID<span style="color:var(--primary)">VIEW</span></div>
-    <button class="btn btn-primary" onclick="newLayout()">+ NEW LAYOUT</button>
-    <button class="btn btn-save" onclick="saveLayout()">💾 SAVE VIEW</button>
+    <button class="btn-main" onclick="createNewLayout()">+ NEW VIEW</button>
 
-    <div class="section-label">Saved Views</div>
+    <div class="section-label">Saved Layouts</div>
     <div id="layout-list"></div>
 
     <div class="section-label">Available Cameras</div>
@@ -48,68 +58,21 @@
 <main><div id="grid"></div></main>
 
 <script>
-    let activeStreams = [];
-    let lastInventoryHash = "";
+    let activeLayoutName = null;
+    let availableStreamsData = [];
 
-    // 1. Update Sidebar Inventory (Auto-syncs list, but not the grid)
     async function updateSidebar() {
         const res = await fetch('/api/available_streams');
-        const streams = await res.json();
-        const hash = JSON.stringify(streams.map(s => s.id));
-        if (hash === lastInventoryHash) return;
-
+        availableStreamsData = await res.json();
         const sList = document.getElementById('stream-list');
         sList.innerHTML = '';
-        streams.forEach(s => {
+        availableStreamsData.forEach(s => {
             const div = document.createElement('div');
-            div.className = 'nav-item';
+            div.className = 'stream-item';
             div.innerHTML = `<span>📹 ${s.name}</span> <b>+</b>`;
             div.onclick = () => addTile(s);
             sList.appendChild(div);
         });
-        lastInventoryHash = hash;
-    }
-
-    // 2. Add a Video Tile
-    function addTile(stream) {
-        if (activeStreams.some(s => s.url === stream.url)) return;
-        const grid = document.getElementById('grid');
-        const tile = document.createElement('div');
-        tile.className = 'tile';
-        const vidId = 'v-' + Math.random().toString(36).substr(2, 5);
-        tile.innerHTML = `
-            <div class="tile-label">
-                <span>${stream.name} <i class="info-icon" data-source="${stream.source}">ⓘ</i></span>
-                <span style="color:#ff4444; cursor:pointer;" onclick="this.parentElement.parentElement.remove(); activeStreams=activeStreams.filter(s=>s.url!=='${stream.url}'); saveState();">✕</span>
-            </div>
-            <video id="${vidId}" autoplay muted controls></video>
-        `;
-        grid.appendChild(tile);
-        if (Hls.isSupported()) {
-            const hls = new Hls();
-            hls.loadSource(stream.url);
-            hls.attachMedia(document.getElementById(vidId));
-        }
-        activeStreams.push(stream);
-        saveState();
-    }
-
-    // 3. Layout Management
-    function newLayout() {
-        document.getElementById('grid').innerHTML = '';
-        activeStreams = [];
-        saveState();
-    }
-
-    async function saveLayout() {
-        const name = prompt("Name this layout:");
-        if (!name) return;
-        await fetch('/api/layouts', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name, streams: activeStreams})
-        });
-        loadLayouts();
     }
 
     async function loadLayouts() {
@@ -117,39 +80,143 @@
         const layouts = await res.json();
         const lList = document.getElementById('layout-list');
         lList.innerHTML = '';
+
         Object.keys(layouts).forEach(name => {
-            const div = document.createElement('div');
-            div.className = 'nav-item';
-            div.innerHTML = `<span onclick="applyLayout('${name}')">🖼️ ${name}</span> <b class="del-btn" onclick="deleteLayout('${name}', event)">✕</b>`;
-            lList.appendChild(div);
+            const container = document.createElement('div');
+            container.className = `layout-item ${activeLayoutName === name ? 'active' : ''}`;
+            container.innerHTML = `
+                <div class="layout-link" onclick="applyLayout('${name}')">🖼️ ${name}</div>
+                <div class="layout-actions">
+                    <button class="action-btn btn-save" onclick="saveCurrentLayout('${name}')">SAVE</button>
+                    <button class="action-btn btn-discard" onclick="applyLayout('${name}')">RESET</button>
+                    <button class="action-btn btn-delete" onclick="confirmDelete('${name}')">DEL</button>
+                </div>
+            `;
+            lList.appendChild(container);
         });
-        window.applyLayout = (n) => {
-            document.getElementById('grid').innerHTML = '';
-            activeStreams = [];
-            layouts[n].forEach(addTile);
-        };
     }
 
-    async function deleteLayout(name, e) {
-        e.stopPropagation();
-        if (confirm(`Delete ${name}?`)) {
-            await fetch('/api/delete_layout', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name}) });
-            loadLayouts();
+    function applyLayout(name) {
+        fetch('/api/layouts').then(r => r.json()).then(layouts => {
+            if (!layouts[name]) return;
+            activeLayoutName = name;
+            document.getElementById('grid').innerHTML = '';
+            layouts[name].forEach(s => addTile(s, s.gridPos));
+            loadLayouts(); // Refresh UI to show active state
+            saveGlobalState();
+        });
+    }
+
+    function createNewLayout() {
+        const name = prompt("Name for your new layout:");
+        if (!name) return;
+        activeLayoutName = name;
+        document.getElementById('grid').innerHTML = '';
+        saveCurrentLayout(name);
+    }
+
+    function saveCurrentLayout(name) {
+        const tiles = document.querySelectorAll('.tile');
+        const streams = Array.from(tiles).map(t => ({
+            ...JSON.parse(t.dataset.streamData),
+            gridPos: { col: t.dataset.col, row: t.dataset.row, w: t.dataset.w, h: t.dataset.h }
+        }));
+        fetch('/api/layouts', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, streams})
+        }).then(() => loadLayouts());
+    }
+
+    function confirmDelete(name) {
+        if (confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) {
+            fetch('/api/delete_layout', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name})
+            }).then(() => {
+                if (activeLayoutName === name) {
+                    activeLayoutName = null;
+                    document.getElementById('grid').innerHTML = '';
+                }
+                loadLayouts();
+            });
         }
     }
 
-    // 4. State Persistence
-    function saveState() {
-        fetch('/api/state', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({streams: activeStreams}) });
+    function addTile(stream, savedState = null) {
+        let state = savedState || { col: 'auto', row: 'auto', w: 3, h: 3 };
+        const grid = document.getElementById('grid');
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.dataset.streamData = JSON.stringify(stream);
+
+        applyTileStyles(tile, state);
+
+        const id = 'v-' + Math.random().toString(36).substr(2, 5);
+        tile.innerHTML = `
+            <div class="tile-header">
+                <span>${stream.name}</span>
+                <div class="controls">
+                    <span class="ctrl-btn" onclick="move(this, 0, -1)">↑</span>
+                    <span class="ctrl-btn" onclick="move(this, 0, 1)">↓</span>
+                    <span class="ctrl-btn" onclick="move(this, -1, 0)">←</span>
+                    <span class="ctrl-btn" onclick="move(this, 1, 0)">→</span>
+                    <span class="ctrl-btn" onclick="scale(this, 1)">+</span>
+                    <span class="ctrl-btn" onclick="scale(this, -1)">-</span>
+                    <span class="ctrl-btn" style="color:#f55" onclick="this.closest('.tile').remove(); saveGlobalState();">✕</span>
+                </div>
+            </div>
+            <video id="${id}" autoplay muted controls></video>
+        `;
+        grid.appendChild(tile);
+
+        if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(stream.url);
+            hls.attachMedia(document.getElementById(id));
+        }
+        saveGlobalState();
+    }
+
+    function applyTileStyles(tile, state) {
+        tile.style.gridColumn = `${state.col !== 'auto' ? state.col : 'auto'} / span ${state.w}`;
+        tile.style.gridRow = `${state.row !== 'auto' ? state.row : 'auto'} / span ${state.h}`;
+        tile.dataset.col = state.col; tile.dataset.row = state.row;
+        tile.dataset.w = state.w; tile.dataset.h = state.h;
+    }
+
+    function move(btn, dCol, dRow) {
+        const tile = btn.closest('.tile');
+        let col = tile.dataset.col === 'auto' ? 1 : parseInt(tile.dataset.col);
+        let row = tile.dataset.row === 'auto' ? 1 : parseInt(tile.dataset.row);
+        applyTileStyles(tile, { col: Math.max(1, col + dCol), row: Math.max(1, row + dRow), w: tile.dataset.w, h: tile.dataset.h });
+        saveGlobalState();
+    }
+
+    function scale(btn, delta) {
+        const tile = btn.closest('.tile');
+        applyTileStyles(tile, { col: tile.dataset.col, row: tile.dataset.row, w: Math.max(1, parseInt(tile.dataset.w) + delta), h: Math.max(1, parseInt(tile.dataset.h) + delta) });
+        saveGlobalState();
+    }
+
+    function saveGlobalState() {
+        const tiles = document.querySelectorAll('.tile');
+        const streams = Array.from(tiles).map(t => ({
+            ...JSON.parse(t.dataset.streamData),
+            gridPos: { col: t.dataset.col, row: t.dataset.row, w: t.dataset.w, h: t.dataset.h }
+        }));
+        fetch('/api/state', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({streams, activeLayout: activeLayoutName}) });
     }
 
     async function init() {
-        loadLayouts();
         updateSidebar();
-        setInterval(updateSidebar, 5000);
+        loadLayouts();
         const res = await fetch('/api/state');
         const state = await res.json();
-        if (state.streams) state.streams.forEach(addTile);
+        if (state.activeLayout) activeLayoutName = state.activeLayout;
+        if (state.streams) state.streams.forEach(s => addTile(s, s.gridPos));
+        setInterval(updateSidebar, 10000);
     }
 
     init();

@@ -1,33 +1,33 @@
-version: '3.8'
-
 services:
   # Main Encoder App
   gridstream:
     build: .
     container_name: gridstream
+    restart: unless-stopped
+    # Use Gunicorn here too to fix the warning and port conflict
+    command: gunicorn --bind 0.0.0.0:8080 app:app --workers 2 --threads 4
     ports:
       - "8080:8080"
     volumes:
       - .:/app
       - /tmp/gridstream_preview:/tmp/gridstream_preview
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu, video]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
-  # New Viewer App
+  # Viewer App
   gridstream-viewer:
     build: .
     container_name: gridstream-viewer
     restart: unless-stopped
-    command: python3 viewer_app.py
+    command: gunicorn --bind 0.0.0.0:8081 viewer_app:app --workers 4 --threads 2 --timeout 60
     ports:
       - "8081:8081"
     volumes:
       - .:/app
-      - ./streams.json:/app/streams.json  # Shared config
+      - ./streams.json:/app/streams.json
     depends_on:
-      - gridstream
+      gridstream:
+        condition: service_started

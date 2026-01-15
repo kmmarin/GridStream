@@ -1,26 +1,24 @@
-# Use NVIDIA's official CUDA image with Ubuntu
-FROM nvidia/cuda:12.2.0-base-ubuntu22.04
+FROM python:3.11-slim
 
-# Install Python, FFmpeg, and NVIDIA's FFmpeg headers
+# Install FFmpeg and system dependencies
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
     ffmpeg \
-    libva-drm2 \
-    libva2 \
+    libsm6 \
+    libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install Python dependencies
+# Install Python requirements
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
+# Copy application code
 COPY . .
 
-# Expose the Flask port
+# Default port for the main encoder (can be overridden in compose)
 EXPOSE 8080
+EXPOSE 8081
 
-# Command to run the application
+# Default command (The compose file overrides this for the viewer)
 CMD ["python3", "app.py"]

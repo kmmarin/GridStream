@@ -24,18 +24,21 @@ def get_streams():
     for sid, config in data.items():
         if config.get("should_be_running"):
             f = config.get("fields", {})
-            dest = f.get("destination", "")
+            dest = f.get("destination", "rtsp://localhost:8554")
+            s_name = f.get("stream_name", "unknown")
             host = dest.split("://")[1].split(":")[0] if "://" in dest else "localhost"
-            hls_url = f"http://{host}:8888/{f.get('stream_name')}/index.m3u8"
-            available.append({"id": sid, "name": f.get("stream_name"), "url": hls_url, "source": f.get("input")})
+            hls_url = f"http://{host}:8888/{s_name}/index.m3u8"
+            available.append({
+                "id": sid, "name": s_name, "url": hls_url,
+                "display_info": f"Server: {dest} | Path: /{s_name}"
+            })
     return jsonify(available)
 
 @app.route("/api/layouts", methods=["GET", "POST"])
 def manage_layouts():
     layouts = load_json(LAYOUTS_FILE, {})
     if request.method == "POST":
-        data = request.json
-        layouts[data['name']] = data['streams']
+        layouts[request.json['name']] = request.json['streams']
         with open(LAYOUTS_FILE, "w") as f: json.dump(layouts, f, indent=4)
         return jsonify({"status": "success"})
     return jsonify(layouts)

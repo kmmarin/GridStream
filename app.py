@@ -176,6 +176,9 @@ def api_logs(sid):
         return jsonify({"log": streams[sid]["log"], "running": streams[sid]["proc"] is not None})
     return jsonify({"log": [], "running": False})
 
+# ... (Your existing imports and routes stay exactly as they are)
+
 if __name__ == "__main__":
-    load_from_disk()
-    app.run(host="0.0.0.0", port=8080)
+    # This only runs if you do 'python3 viewer_app.py' manually
+    # Gunicorn ignores this and uses the 'app' object directly
+    app.run(host="0.0.0.0", port=8081, debug=True)
