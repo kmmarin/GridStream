@@ -31,7 +31,7 @@ Built for efficiency, GridStream allows you to relay video feeds while keeping a
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/kmmarin/GridStream.git](https://github.com/kmmarin/GridStream.git)
+    git clone https://github.com/kmmarin/GridStream.git
     cd GridStream
     ```
 
