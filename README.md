@@ -1,32 +1,61 @@
 # GridStream
 
-**GridStream** is a high-performance, web-based FFmpeg orchestrator designed to manage multiple RTSP/RTMP streams with full **NVIDIA NVENC** hardware acceleration. 
+**GridStream** is a high-performance, web-based FFmpeg orchestrator and multi-view dashboard. It is designed to manage, transcode, and monitor multiple RTSP/RTMP streams through a centralized interface.
 
-
-
-Built for efficiency, GridStream allows you to transcode, relay, and monitor multiple video feeds through a single dashboard while keeping CPU usage minimal by offloading video processing to the GPU.
+Built for efficiency, GridStream allows you to relay video feeds while keeping a close eye on system performance and stream health.
 
 ## ✨ Key Features
 
-* **NVIDIA NVENC Integration:** Fully optimized for H.264 and HEVC (H.265) hardware encoding.
-* **Real-time Dashboard:** Monitor System CPU, RAM, and Network usage alongside NVIDIA GPU load and temperature.
-* **Live Stream Previews:** Side-by-side view of a fixed-size (320x200) live HLS preview and raw FFmpeg console output.
-* **Auto-Healing:** A background monitor automatically restarts any failed or crashed streams if they were marked as "Started."
-* **Persistent Configuration:** All stream settings are saved to `streams.json`, allowing the system to automatically resume active streams after a reboot.
-* **Global Controls:** Start all saved encoders or stop every active stream with one click.
+* **Dual-App Architecture:** Separate interfaces for **Encoder Management** (Port 8080) and **Multi-View Monitoring** (Port 8081).
+* **Hardware Acceleration:** Native support for **NVIDIA NVENC** (H264/HEVC).
+    * *Note: NVIDIA hardware is optional. If no GPU is present, streams can be set to "Copy" codec or modified for CPU encoding.*
+* **Reactive Multi-Viewer:** A dedicated viewer with a persistent sidebar, "Open All" capabilities, and real-time stream inventory updates.
+* **Custom Layouts:** Create, save, and delete custom camera grids. GridStream remembers your last active view even after a browser refresh.
+* **Real-time Diagnostics:** Monitor CPU, RAM, and NVIDIA GPU load/temperature alongside raw FFmpeg console logs.
+* **Auto-Healing:** Background monitoring automatically restarts crashed streams marked as "Should be running."
+* **Persistent Storage:** All configurations and layouts are saved to JSON files, ensuring your setup survives container restarts.
+
+---
 
 ## 🚀 Getting Started
+### Accessing the Apps
+Encoder Dashboard: http://<ip-address>:8080 — Add, edit, and start your FFmpeg processes.
+
+Reactive Viewer: http://<ip-address>:8081 — Build and save your multi-camera monitoring grids.
+
+🛠 Configuration
+streams.json: Stores the master list of camera inputs, encoder settings (bitrate, fps, codec), and current run-state.
+
+layouts.json: Stores your custom-named viewer grids, allowing you to switch between "Security Desk," "Outside Perimeter," or "Workroom" views instantly.
+
+state.json: Automatically tracks which streams are currently visible on your Viewer dashboard to restore your session upon reload.
+
+📝 Usage Notes
+Codec Support: When adding a stream, selecting h264 or hevc will trigger nvenc hardware acceleration. Use copy for zero-latency, low-CPU relaying.
+
+Network: Ensure the destination RTSP URL is reachable by your Media Server (e.g., MediaMTX) to allow the Viewer to generate HLS segments.
 
 ### Prerequisites
-* An NVIDIA GPU with the latest drivers.
-* [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed.
 * Docker and Docker Compose.
+* **For NVIDIA Encoding:**
+    * An NVIDIA GPU with latest drivers.
+    * [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) installed.
+### To install without NVIDIA
+Comment out these lines in the docker compose file
+
+```bash
+#    deploy:
+#      resources:
+#        reservations:
+#          devices:
+#            - driver: nvidia
+#              count: all
+#              capabilities: [gpu, video]
 
 ### Installation
 
-1. **Clone the repository:**
-   ```bash
-   git clone [https://github.com/kmmarin/GridStream.git](https://github.com/kmmarin/GridStream.git)
-   cd GridStream
-   docker compose up -d --build
-   docker compose up -d
+```bash
+git clone https://github.com/kmmarin/GridStream.git
+cd GridStream
+docker compose build
+docker compose up -d
