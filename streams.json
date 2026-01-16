@@ -1,1 +1,13 @@
-{}
+{
+    "1": {
+        "fields": {
+            "codec": "copy",
+            "destination": "rtsp://172.16.0.137:8554",
+            "input": "rtsp://172.16.2.75/axis-media/media.amp",
+            "stream_name": "workbench"
+        },
+        "id": 1,
+        "saved": true,
+        "should_be_running": true
+    }
+}
